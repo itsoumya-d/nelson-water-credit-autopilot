@@ -1,0 +1,25 @@
+model Model
+  culture: en-NZ
+  defaultPowerBIDataSourceVersion: powerBI_V3
+
+table WaterCreditAssessment
+  column assessment_id
+    dataType: string
+    isKey
+  column account_id
+    dataType: string
+  column policy_reason
+    dataType: string
+  column status
+    dataType: string
+  column credit_inc_gst
+    dataType: decimal
+    formatString: \$#,0.00;(\$#,0.00)
+  column created_at
+    dataType: dateTime
+    formatString: dd/MM/yyyy
+  measure 'Auto-credit rate' = DIVIDE(CALCULATE(COUNTROWS(WaterCreditAssessment), WaterCreditAssessment[status] = "AutoCredit"), COUNTROWS(WaterCreditAssessment))
+    formatString: 0.0%
+  measure 'Credit value' = SUM(WaterCreditAssessment[credit_inc_gst])
+    formatString: \$#,0.00
+  measure 'Review backlog' = CALCULATE(COUNTROWS(WaterCreditAssessment), WaterCreditAssessment[status] = "Review")

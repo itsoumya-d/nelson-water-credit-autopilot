@@ -1,0 +1,4 @@
+<Solution>
+  <Project Path="src/NelsonWaterCredit/NelsonWaterCredit.csproj" />
+  <Project Path="tests/NelsonWaterCredit.Tests/NelsonWaterCredit.Tests.csproj" />
+</Solution>

@@ -1,0 +1,49 @@
+{
+  "name": "Water credit autopilot",
+  "description": "Runs after a credit assessment is written and either books a high-confidence credit or asks a council reviewer to approve an exception.",
+  "trigger": {
+    "type": "When_a_row_is_created",
+    "dataset": "WaterCreditAssessment",
+    "table": "water_credit_assessment"
+  },
+  "actions": {
+    "Get_account": {
+      "type": "Get_row",
+      "dataset": "WaterAccount",
+      "table": "water_account",
+      "key": "@triggerOutputs()?['body/account_id']"
+    },
+    "Auto_credit_condition": {
+      "type": "Condition",
+      "expression": "@equals(triggerOutputs()?['body/status'], 'AutoCredit')",
+      "if_true": {
+        "Post_credit_to_rates": {
+          "type": "Http",
+          "method": "POST",
+          "uri": "https://rates.internal/api/credits",
+          "body": {
+            "accountId": "@triggerOutputs()?['body/account_id']",
+            "amount": "@triggerOutputs()?['body/credit_inc_gst']",
+            "reference": "@triggerOutputs()?['body/assessment_id']",
+            "reason": "@triggerOutputs()?['body/policy_reason']"
+          }
+        },
+        "Notify_ratepayer": {
+          "type": "Send_email",
+          "to": "@outputs('Get_account')?['body/ratepayer_email']",
+          "subject": "A water credit has been applied to your account",
+          "body": "We found and corrected a water billing issue. Credit applied: NZ$@{triggerOutputs()?['body/credit_inc_gst']}."
+        }
+      },
+      "if_false": {
+        "Request_reviewer_approval": {
+          "type": "Start_and_wait_for_an_approval",
+          "approvalType": "Approve/Reject",
+          "title": "Water credit review: @{triggerOutputs()?['body/policy_reason']}",
+          "assignedTo": "water-billing-reviewers@ncc.govt.nz",
+          "details": "@{triggerOutputs()?['body/evidence_json']}"
+        }
+      }
+    }
+  }
+}
